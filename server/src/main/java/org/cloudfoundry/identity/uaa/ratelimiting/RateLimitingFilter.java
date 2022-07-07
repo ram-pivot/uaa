@@ -23,6 +23,17 @@ import org.slf4j.LoggerFactory;
 public class RateLimitingFilter extends HttpFilter {
     private static final Logger log = LoggerFactory.getLogger( RateLimitingFilter.class );
 
+    private static String statusPrefix = "";
+
+    static {
+        statusPrefix = "[" + envFor("UAA_CONFIG_PATH") + "+" + envFor("CLOUDFOUNDRY_CONFIG_PATH") + "]";
+    }
+
+    private static String envFor( String envVarName ) {
+        String value = System.getenv( envVarName );
+        return envVarName + " -> " + value;
+    }
+
     @SuppressWarnings("unused")
     // Not really unused, called by container to create Filter
     public RateLimitingFilter() // default and production constructor
@@ -74,7 +85,7 @@ public class RateLimitingFilter extends HttpFilter {
             filterer.doFilter( request, response, filterChain );
         } else {
             PrintWriter writer = response.getWriter();
-            writer.print( filterer.status() );
+            writer.print( statusPrefix + filterer.status() );
             response.setStatus( 200 );
         }
     }

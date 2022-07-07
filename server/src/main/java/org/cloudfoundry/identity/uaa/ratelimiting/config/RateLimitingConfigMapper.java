@@ -45,23 +45,42 @@ public class RateLimitingConfigMapper {
 
     // package friendly for testing
     @SuppressWarnings("unused")
+    YamlConfigFileDTO getDtoPrevious() {
+        return dtoPrevious;
+    }
+
+    // package friendly for testing
+    @SuppressWarnings("unused")
     boolean hasCredentialIdTypes() {
         return !credentialIdTypesByKey.isEmpty();
     }
 
     public RateLimitingFactoriesSupplierWithStatus map( RateLimitingFactoriesSupplierWithStatus current, String fromSource, YamlConfigFileDTO dto ) {
+        return checkNoChange( dto ) ? null : createErrorSupplierPair( dto ).map( current, fromSource, updatingEnabled, currentTimeSupplier.now() );
+    }
+
+    // package friendly for testing
+    boolean checkNoChange( YamlConfigFileDTO dto ) {
         if ( (dto == null) || dto.equals( dtoPrevious ) ) {
-            return null;
+            return true;
         }
         dtoPrevious = dto;
-        ErrorSupplierPair pair;
+        return false;
+    }
+
+    // package friendly for testing
+    ErrorSupplierPair createErrorSupplierPair( YamlConfigFileDTO dto ) {
         try {
-            pair = ErrorSupplierPair.with( new Mapper().map( dto ) );
+            return ErrorSupplierPair.with( getSupplier( dto ) );
         }
         catch ( RuntimeException e ) {
-            pair = ErrorSupplierPair.with( e );
+            return ErrorSupplierPair.with( e );
         }
-        return pair.map( current, fromSource, updatingEnabled, currentTimeSupplier.now() );
+    }
+
+    // package friendly for testing
+    InternalLimiterFactoriesSupplier getSupplier( YamlConfigFileDTO dto ) {
+        return new Mapper().map( dto );
     }
 
     private void populateCredentialIdTypes( CredentialIdType[] credentialIdTypes ) {

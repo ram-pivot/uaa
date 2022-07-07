@@ -18,6 +18,7 @@ public class RateLimitingConfigLoader implements Runnable {
     public static final String YAML_FETCH_FAILED = "Fetch Failed";
     public static final String YAML_NULL = "null";
     public static final String YAML_EMPTY = "empty";
+    public static final String YAML_NO_DATA = "no data";
     public static final String TYPE_PROPERTIES_PROBLEM = "unacceptable/incompatible TypeProperties: ";
 
     private final LoaderLogger logger;
@@ -162,9 +163,13 @@ public class RateLimitingConfigLoader implements Runnable {
             if ( yamlString == null ) {
                 throw new YamlRateLimitingConfigException( null, YAML_NULL );
             }
-            yamlString = yamlString.trim();
+            yamlString = yamlString.stripLeading();
             if ( yamlString.isEmpty() ) {
                 throw new YamlRateLimitingConfigException( yamlString, YAML_EMPTY );
+            }
+            yamlString = bindYaml.removeLeadingEmptyDocuments( yamlString );
+            if ( yamlString.isEmpty() ) {
+                throw new YamlRateLimitingConfigException( yamlString, YAML_NO_DATA );
             }
         }
 

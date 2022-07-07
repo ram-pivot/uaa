@@ -9,6 +9,17 @@ import org.yaml.snakeyaml.constructor.Constructor;
 public class BindYaml {
     private final String sourcedFrom;
 
+    public String removeLeadingEmptyDocuments( String yaml) {
+        yaml = (yaml == null) ? "" : yaml.stripLeading();
+        while (yaml.startsWith( "---" )) {
+            yaml = yaml.substring( 3 ).stripLeading();
+            if (yaml.startsWith( "{}" )) {
+                yaml = yaml.substring( 2 ).stripLeading();
+            }
+        }
+        return yaml;
+    }
+
     public <T> T bind( Class<T> targetClass, String yaml ) {
         T target = null;
         if ( yaml != null ) {

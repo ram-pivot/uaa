@@ -27,6 +27,8 @@ public class InitialConfig {
     public static final Singleton<InitialConfig> SINGLETON =
             new Singleton<>( InitialConfig::create );
 
+    private static final BindYaml BIND_YAML =  new BindYaml( "Resource file(/" + LOCAL_RESOURCE_CONFIG_FILE + ")" );
+
     private final Exception initialError;
     private final String dynamicUpdateURL;
     private final YamlConfigFileDTO localResourceConfigFileDTO;
@@ -109,8 +111,7 @@ public class InitialConfig {
 
     // packageFriendly for Testing
     static ExtendedYamlConfigFileDTO parseFile( String fileText ) {
-        return new BindYaml( "Resource file(/" + LOCAL_RESOURCE_CONFIG_FILE + ")" )
-                .bind( ExtendedYamlConfigFileDTO.class, fileText );
+        return BIND_YAML.bind( ExtendedYamlConfigFileDTO.class, fileText );
     }
 
     static String loadFile( InputStream is ) {
@@ -128,13 +129,7 @@ public class InitialConfig {
         catch ( IOException e ) {
             throw new IllegalStateException( "Unable to read resource (root) file: " + LOCAL_RESOURCE_CONFIG_FILE, e );
         }
-        String str = sb.toString().stripLeading();
-        if (str.startsWith( "---" )) {
-            str = str.substring( 3 ).stripLeading();
-            if (str.startsWith( "{}" )) {
-                str = str.substring( 2 ).stripLeading();
-            }
-        }
+        String str = BIND_YAML.removeLeadingEmptyDocuments( sb.toString() );
         return str.isEmpty() ? null : str;
     }
 

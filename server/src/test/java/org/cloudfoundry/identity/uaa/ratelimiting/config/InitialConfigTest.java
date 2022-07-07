@@ -31,6 +31,10 @@ class InitialConfigTest {
             "      - 'equals:/authenticate'\n" +
             "";
 
+    private static final String EMPTY_LEADING_DOCS = "\n" +
+                                                     "---\n" +
+                                                     "---\n";
+
     @Test
     void create() {
         InitialConfig ic = InitialConfig.create();
@@ -42,12 +46,11 @@ class InitialConfigTest {
     void loadFile() {
         assertNull( InitialConfig.loadFile( null ) );
 
-        assertEquals( SAMPLE_RATE_LIMITER_CONFIG_FILE, InitialConfig.loadFile( new ByteArrayInputStream(
-                SAMPLE_RATE_LIMITER_CONFIG_FILE.getBytes( StandardCharsets.UTF_8 ) ) ) );
-
         assertNull( InitialConfig.loadFile( inputStringFrom( " \n" ) ) );
+        assertNull( InitialConfig.loadFile( inputStringFrom( EMPTY_LEADING_DOCS ) ) );
 
-        assertEquals( SAMPLE_RATE_LIMITER_CONFIG_FILE, InitialConfig.loadFile( inputStringFrom( SAMPLE_RATE_LIMITER_CONFIG_FILE ) ) );
+        assertEquals( SAMPLE_RATE_LIMITER_CONFIG_FILE, InitialConfig.loadFile(
+                inputStringFrom( EMPTY_LEADING_DOCS + SAMPLE_RATE_LIMITER_CONFIG_FILE ) ) );
     }
 
     @Test
