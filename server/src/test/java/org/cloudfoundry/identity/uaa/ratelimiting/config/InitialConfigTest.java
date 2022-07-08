@@ -44,13 +44,13 @@ class InitialConfigTest {
 
     @Test
     void loadFile() {
-        assertNull( InitialConfig.loadFile( null ) );
+        assertNull( InitialConfig.loadFile( null, "test-0" ) );
 
-        assertNull( InitialConfig.loadFile( inputStringFrom( " \n" ) ) );
-        assertNull( InitialConfig.loadFile( inputStringFrom( EMPTY_LEADING_DOCS ) ) );
+        assertNull( InitialConfig.loadFile( inputStringFrom( " \n" ), "test-1" ) );
+        assertNull( InitialConfig.loadFile( inputStringFrom( EMPTY_LEADING_DOCS ), "test-2" ) );
 
         assertEquals( SAMPLE_RATE_LIMITER_CONFIG_FILE, InitialConfig.loadFile(
-                inputStringFrom( EMPTY_LEADING_DOCS + SAMPLE_RATE_LIMITER_CONFIG_FILE ) ) );
+                inputStringFrom( EMPTY_LEADING_DOCS + SAMPLE_RATE_LIMITER_CONFIG_FILE ) , "test-3").body );
     }
 
     InputStream inputStringFrom( String fileContents ) {
