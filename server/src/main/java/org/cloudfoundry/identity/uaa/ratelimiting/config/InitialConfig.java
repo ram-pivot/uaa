@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -27,7 +28,7 @@ public class InitialConfig {
     public static final Singleton<InitialConfig> SINGLETON =
             new Singleton<>( InitialConfig::create );
 
-    private static final BindYaml BIND_YAML =  new BindYaml( "Resource file(/" + LOCAL_RESOURCE_CONFIG_FILE + ")" );
+    private static final String PRIMARY_DYNAMIC_CONFIG_URL = StringUtils.normalizeToNull( System.getenv( ENVIRONMENT_CONFIG_URL ) );
 
     private final Exception initialError;
     private final String dynamicUpdateURL;
@@ -50,16 +51,27 @@ public class InitialConfig {
 
     // packageFriendly for Testing
     static InitialConfig create() {
-        return create( StringUtils.normalizeToNull( System.getenv( ENVIRONMENT_CONFIG_URL ) ), // primary source of dynamic updates
-                       loadFile( getFileInputStream() ),
-                       MillisTimeSupplier.SYSTEM );
+        return create( PRIMARY_DYNAMIC_CONFIG_URL, locateAndLoadLocalConfigFile(), MillisTimeSupplier.SYSTEM );
+    }
+
+    @AllArgsConstructor
+    static class SourcedFile {
+        String body;
+        String source;
+    }
+
+    // packageFriendly for Testing
+    static SourcedFile locateAndLoadLocalConfigFile() {
+        String fileText = loadFile( getFileInputStream() );
+        return (fileText == null) ? null :
+               new SourcedFile( fileText, "resource file(/" + LOCAL_RESOURCE_CONFIG_FILE + ")" );
     }
 
     @SuppressWarnings("SameParameterValue")
     // packageFriendly for Testing
     static InitialConfig create( String url, // primary source of dynamic updates
-                                 String fileText, MillisTimeSupplier currentTimeSupplier ) {
-        if ( (url == null) && (fileText == null) ) { // Leave everything disabled!
+                                 SourcedFile localConfigFile, MillisTimeSupplier currentTimeSupplier ) {
+        if ( (url == null) && (localConfigFile == null) ) { // Leave everything disabled!
             return new InitialConfig( null, null, null,
                                       RateLimitingFactoriesSupplierWithStatus.NO_RATE_LIMITING );
         }
@@ -69,9 +81,12 @@ public class InitialConfig {
         ExtendedYamlConfigFileDTO dto = null;
         CurrentStatus currentStatus = CurrentStatus.DISABLED;
         UpdateStatus updateStatus = UpdateStatus.DISABLED;
-        if ( fileText != null ) {
+        String sourcedFrom = "InitialConfig";
+        if ( localConfigFile != null ) {
+            sourcedFrom = localConfigFile.source;
+            BindYaml<ExtendedYamlConfigFileDTO> bindYaml = new BindYaml<>( ExtendedYamlConfigFileDTO.class, sourcedFrom );
             try {
-                dto = parseFile( fileText );
+                dto = parseFile( bindYaml, localConfigFile.body );
                 if ( url == null ) {
                     url = dto.getDynamicConfigUrl(); // secondary source of dynamic updates
                 }
@@ -102,7 +117,7 @@ public class InitialConfig {
                         .status( RateLimiterStatus.builder()
                                          .current( current )
                                          .update( update )
-                                         .fromSource( "InitialConfig" )
+                                         .fromSource( sourcedFrom )
                                          .build() )
                         .build();
 
@@ -110,8 +125,8 @@ public class InitialConfig {
     }
 
     // packageFriendly for Testing
-    static ExtendedYamlConfigFileDTO parseFile( String fileText ) {
-        return BIND_YAML.bind( ExtendedYamlConfigFileDTO.class, fileText );
+    static ExtendedYamlConfigFileDTO parseFile( BindYaml<ExtendedYamlConfigFileDTO> bindYaml, String fileText ) {
+        return bindYaml.bind( fileText );
     }
 
     static String loadFile( InputStream is ) {
@@ -129,7 +144,7 @@ public class InitialConfig {
         catch ( IOException e ) {
             throw new IllegalStateException( "Unable to read resource (root) file: " + LOCAL_RESOURCE_CONFIG_FILE, e );
         }
-        String str = BIND_YAML.removeLeadingEmptyDocuments( sb.toString() );
+        String str = BindYaml.removeLeadingEmptyDocuments( sb.toString() );
         return str.isEmpty() ? null : str;
     }
 

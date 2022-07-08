@@ -53,19 +53,18 @@ class InitialConfigTest {
                 inputStringFrom( EMPTY_LEADING_DOCS + SAMPLE_RATE_LIMITER_CONFIG_FILE ) ) );
     }
 
-    @Test
     InputStream inputStringFrom( String fileContents ) {
         return new ByteArrayInputStream( fileContents.getBytes( StandardCharsets.UTF_8 ) );
     }
 
     @Test
     void parseFile() {
-        InitialConfig.ExtendedYamlConfigFileDTO dto = InitialConfig.parseFile( SAMPLE_RATE_LIMITER_CONFIG_FILE );
-        assertEquals( dto.toString(),
-                      SAMPLE_RATE_LIMITER_CONFIG_FILE_ROUND_TRIPPED_THRU_SNAKE_YAML );
+        BindYaml<InitialConfig.ExtendedYamlConfigFileDTO> bindYaml = new BindYaml<>( InitialConfig.ExtendedYamlConfigFileDTO.class, "test" );
+        InitialConfig.ExtendedYamlConfigFileDTO dto = InitialConfig.parseFile( bindYaml, SAMPLE_RATE_LIMITER_CONFIG_FILE );
+        assertEquals( dto.toString(), SAMPLE_RATE_LIMITER_CONFIG_FILE_ROUND_TRIPPED_THRU_SNAKE_YAML );
 
         try {
-            dto = InitialConfig.parseFile( "BadField" + SAMPLE_RATE_LIMITER_CONFIG_FILE );
+            dto = InitialConfig.parseFile( bindYaml, "BadField" + SAMPLE_RATE_LIMITER_CONFIG_FILE );
             fail( "expected Exception, but got dto: " + dto );
         }
         catch ( YamlRateLimitingConfigException expected ) {

@@ -23,11 +23,7 @@ import org.slf4j.LoggerFactory;
 public class RateLimitingFilter extends HttpFilter {
     private static final Logger log = LoggerFactory.getLogger( RateLimitingFilter.class );
 
-    private static String statusPrefix = "";
-
-    static {
-        statusPrefix = "[" + envFor("UAA_CONFIG_PATH") + "+" + envFor("CLOUDFOUNDRY_CONFIG_PATH") + "]";
-    }
+    private static final String statusPrefix = "[" + envFor( "UAA_CONFIG_PATH" ) + " | " + envFor( "CLOUDFOUNDRY_CONFIG_PATH" ) + "]";
 
     private static String envFor( String envVarName ) {
         String value = System.getenv( envVarName );

@@ -27,7 +27,7 @@ public class RateLimitingConfigLoader implements Runnable {
     private final RateLimitingConfigMapper configMapper;
     private final LimiterFactorySupplierUpdatable supplierUpdatable;
     private final MillisTimeSupplier currentTimeSupplier;
-    private final BindYaml bindYaml;
+    private final BindYaml<YamlConfigFileDTO> bindYaml;
     private final YamlMapper yamlMapper;
     private volatile boolean wereDying = false;
     private Thread backgroundThread;
@@ -64,7 +64,7 @@ public class RateLimitingConfigLoader implements Runnable {
         this.configMapper = configMapper;
         this.supplierUpdatable = supplierUpdatable;
         this.currentTimeSupplier = MillisTimeSupplier.deNull( currentTimeSupplier );
-        bindYaml = new BindYaml( dynamicUpdateURL );
+        bindYaml = new BindYaml<>( YamlConfigFileDTO.class, dynamicUpdateURL );
         yamlMapper = new YamlMapper( current );
 
         if ( fetcher != null ) { // Rate Limiting active
@@ -167,14 +167,14 @@ public class RateLimitingConfigLoader implements Runnable {
             if ( yamlString.isEmpty() ) {
                 throw new YamlRateLimitingConfigException( yamlString, YAML_EMPTY );
             }
-            yamlString = bindYaml.removeLeadingEmptyDocuments( yamlString );
+            yamlString = BindYaml.removeLeadingEmptyDocuments( yamlString );
             if ( yamlString.isEmpty() ) {
                 throw new YamlRateLimitingConfigException( yamlString, YAML_NO_DATA );
             }
         }
 
         private YamlConfigFileDTO parseFile( String yamlString ) {
-            return bindYaml.bind( YamlConfigFileDTO.class, yamlString );
+            return bindYaml.bind( yamlString );
         }
     }
 }
